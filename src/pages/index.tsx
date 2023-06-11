@@ -7,10 +7,42 @@ import {
   MarkerF,
 } from "@react-google-maps/api";
 import { useMemo, useState } from "react";
-
+import WeatherInfo from "@/components/WeatherInfo";
+import { z } from "zod";
 interface Location {
   lat: number;
   lng: number;
+}
+
+const WeatherData = z.object({
+  timezone: z.string(),
+  latitude: z.number(),
+  longitude: z.number(),
+  currently: z.object({
+    temperature: z.number(),
+    windSpeed: z.number(),
+    humidity: z.number(),
+    summary: z.string(),
+  }),
+});
+
+interface Data {
+  timezone: string;
+  temperature: number;
+  latitude: number;
+  longitude: number;
+  windSpeed: number;
+  humidity: number;
+  summary: string;
+}
+
+function fetchWeatherData(latitude: number, longitude: number) {
+  const data = fetch(
+    `http://prometheus-api.zkx.fi/${process.env.WEATHER_API_KEY}/${latitude},${longitude}`
+  ).then((res) => res.json());
+
+  const parsedData = WeatherData.parse(data);
+  return parsedData;
 }
 
 export default function Home() {
@@ -18,8 +50,7 @@ export default function Home() {
   const [latitude, setLatitude] = useState(center.lat);
   const [longitude, setLongitude] = useState(center.lng);
   const [isMapVisible, setMapVisibility] = useState(false);
-
-  const [locations, setLocation] = useState<Location[]>([]);
+  const [weatherData, setWeatherData] = useState<Data[]>([]);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
@@ -31,12 +62,41 @@ export default function Home() {
   }
 
   function addLocation() {
-    setLocation([...locations, { lat: latitude, lng: longitude }]);
+    const data = fetchWeatherData(latitude, longitude);
+
+    setWeatherData([
+      ...weatherData,
+      {
+        timezone: data.timezone,
+        humidity: data.currently.humidity,
+        temperature: data.currently.temperature,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        windSpeed: data.currently.windSpeed,
+        summary: data.currently.summary,
+      },
+    ]);
 
     // save this location to Local storage
-    localStorage.setItem("locations", JSON.stringify(locations));
+    // localStorage.setItem("locations", JSON.stringify(locations));
 
     setMapVisibility(false);
+  }
+
+  function editLocation(latitude: number, longitude: number) {
+    const locations = weatherData.filter(
+      (data) => data.latitude !== latitude || data.longitude !== longitude
+    );
+    setWeatherData(locations);
+    setMapVisibility(true);
+  }
+
+  function deleteLocation(latitude, longitude) {
+    const remainingLocations = weatherData.filter(
+      (data) => data.latitude === latitude && data.longitude === longitude
+    );
+
+    setWeatherData(remainingLocations);
   }
 
   if (!isLoaded) {
@@ -74,6 +134,22 @@ export default function Home() {
             </div>
             <div></div>
           </header>
+          <ul>
+            {weatherData.map((data) => (
+              <WeatherInfo
+                key={data.longitude}
+                place={data.timezone}
+                temperature={data.temperature}
+                humidity={data.humidity}
+                latitude={data.latitude}
+                longitude={data.longitude}
+                summary={data.summary}
+                windSpeed={data.windSpeed}
+                editLocation={editLocation}
+                deleteLocation={deleteLocation}
+              />
+            ))}
+          </ul>
           <div className="flex justify-center">
             <button
               onClick={() => setMapVisibility(true)}
