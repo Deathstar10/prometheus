@@ -65,7 +65,7 @@ export default function Home() {
   function addLocation() {
     const data = fetchWeatherData(latitude, longitude);
 
-    setWeatherData([
+    let newWeatherData = [
       ...weatherData,
       {
         timezone: data.timezone,
@@ -76,10 +76,15 @@ export default function Home() {
         windSpeed: data.currently.windSpeed,
         summary: data.currently.summary,
       },
-    ]);
+    ];
+
+    setWeatherData(newWeatherData);
 
     // save this location to Local storage
-    // localStorage.setItem("locations", JSON.stringify(locations));
+    localStorage.setItem(
+      "locations",
+      JSON.stringify({ lat: data.latitude, lng: data.longitude })
+    );
 
     setMapVisibility(false);
   }
@@ -94,7 +99,7 @@ export default function Home() {
 
   function deleteLocation(latitude: number, longitude: number) {
     const remainingLocations = weatherData.filter(
-      (data) => data.latitude === latitude && data.longitude === longitude
+      (data) => data.latitude !== latitude || data.longitude !== longitude
     );
 
     setWeatherData(remainingLocations);
@@ -135,7 +140,7 @@ export default function Home() {
             </div>
             <div></div>
           </header>
-          <ul>
+          <ul aria-labelledby="list">
             {weatherData.map((data) => (
               <WeatherInfo
                 key={data.longitude}
