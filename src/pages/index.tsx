@@ -37,11 +37,12 @@ interface Data {
 }
 
 function fetchWeatherData(latitude: number, longitude: number) {
-  const data = fetch(
+  // TODO : type this appropriately
+  const data: any = fetch(
     `http://prometheus-api.zkx.fi/${process.env.WEATHER_API_KEY}/${latitude},${longitude}`
   ).then((res) => res.json());
 
-  const parsedData = WeatherData.parse(data);
+  const parsedData = WeatherData.parse(data[0]);
   return parsedData;
 }
 
@@ -91,7 +92,7 @@ export default function Home() {
     setMapVisibility(true);
   }
 
-  function deleteLocation(latitude, longitude) {
+  function deleteLocation(latitude: number, longitude: number) {
     const remainingLocations = weatherData.filter(
       (data) => data.latitude === latitude && data.longitude === longitude
     );

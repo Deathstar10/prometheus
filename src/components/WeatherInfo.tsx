@@ -16,6 +16,8 @@ export default function WeatherInfo({
   windSpeed: number;
   humidity: number;
   summary: string;
+  editLocation: (latitude: number, longitude: number) => void;
+  deleteLocation: (latitude: number, longitude: number) => void;
 }) {
   function handleClick() {
     editLocation(latitude, longitude);
